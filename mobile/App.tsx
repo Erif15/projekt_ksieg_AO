@@ -13,12 +13,13 @@ export default function App() {
         <Stack.Screen
           name="BookList"
           component={BookListScreen}
-          options={{ title: "Lista książek" }}
+          options={{ title: "Podręczna biblioteka" }}
         />
         <Stack.Screen
           name="BookDetails"
           component={BookDetailsScreen}
-          options={{ title: "Szczegóły książki" }}
+          // tytuł ustawiamy dynamicznie w ekranie (navigation.setOptions)
+          options={{ title: "Książka" }}
         />
       </Stack.Navigator>
     </NavigationContainer>

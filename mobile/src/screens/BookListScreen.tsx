@@ -20,15 +20,15 @@ export default function BookListScreen({ navigation }: any) {
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
 
-  const canAdd = useMemo(() => {
-    return title.trim().length > 0 && author.trim().length > 0;
-  }, [title, author]);
+  const canAdd = useMemo(() => title.trim().length > 0 && author.trim().length > 0, [title, author]);
 
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
       const data = await getBooks();
-      setBooks(Array.isArray(data) ? data : []);
+      // sort alfabetycznie
+      const sorted = [...data].sort((a, b) => (a.title || "").localeCompare(b.title || "", "pl"));
+      setBooks(sorted);
     } catch (e: any) {
       Alert.alert("Błąd", e?.message ?? "Nie udało się pobrać książek.");
     } finally {
@@ -36,25 +36,19 @@ export default function BookListScreen({ navigation }: any) {
     }
   }, []);
 
-  // odświeżaj listę zawsze gdy wracasz na ekran listy
+  // odświeżaj listę po powrocie ze szczegółów
   useFocusEffect(
     useCallback(() => {
       refresh();
     }, [refresh])
   );
 
-  const sortedBooks = useMemo(() => {
-    return [...books].sort((a, b) =>
-      (a.title ?? "").localeCompare(b.title ?? "", "pl", { sensitivity: "base" })
-    );
-  }, [books]);
-
   async function onAdd() {
     if (!canAdd) return;
 
     setSaving(true);
     try {
-      await createBook({ title: title.trim(), author: author.trim() });
+      await createBook({ title: title.trim(), author: author.trim(), description: "", rating: undefined });
       setTitle("");
       setAuthor("");
       await refresh();
@@ -67,19 +61,19 @@ export default function BookListScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Lista książek</Text>
+      <Text style={styles.h1}>Podręczna biblioteka</Text>
 
-      <View style={styles.form}>
+      <View style={styles.card}>
         <TextInput
           placeholder="Tytuł"
-          placeholderTextColor="#9fb0c2"
+          placeholderTextColor="#9f0bc2"
           value={title}
           onChangeText={setTitle}
           style={styles.input}
         />
         <TextInput
           placeholder="Autor"
-          placeholderTextColor="#9fb0c2"
+          placeholderTextColor="#9f0bc2"
           value={author}
           onChangeText={setAuthor}
           style={styles.input}
@@ -88,14 +82,9 @@ export default function BookListScreen({ navigation }: any) {
         <Pressable
           onPress={onAdd}
           disabled={!canAdd || saving}
-          style={[
-            styles.addButton,
-            (!canAdd || saving) && { opacity: 0.6 },
-          ]}
+          style={[styles.addButton, (!canAdd || saving) && { opacity: 0.6 }]}
         >
-          <Text style={styles.addButtonText}>
-            {saving ? "Dodawanie..." : "+ Dodaj"}
-          </Text>
+          <Text style={styles.addButtonText}>{saving ? "Dodawanie..." : "+ Dodaj"}</Text>
         </Pressable>
       </View>
 
@@ -106,7 +95,7 @@ export default function BookListScreen({ navigation }: any) {
         </View>
       ) : (
         <FlatList
-          data={sortedBooks}
+          data={books}
           keyExtractor={(item) => String(item.id)}
           renderItem={({ item }) => (
             <Pressable
@@ -114,12 +103,16 @@ export default function BookListScreen({ navigation }: any) {
               style={styles.item}
             >
               <View style={{ flex: 1 }}>
-                <Text style={styles.title}>{item.title}</Text>
+                <Text style={styles.title}>
+                  {item.favorite ? "★ " : ""}
+                  {item.title}
+                </Text>
                 <Text style={styles.author}>{item.author}</Text>
               </View>
               <Text style={styles.chevron}>›</Text>
             </Pressable>
           )}
+          ListEmptyComponent={<Text style={styles.note}>Brak książek. Dodaj pierwszą.</Text>}
         />
       )}
     </View>
@@ -127,15 +120,16 @@ export default function BookListScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "#06111f" },
-  header: { color: "white", fontSize: 34, fontWeight: "900", marginBottom: 14 },
-  form: {
+  container: { flex: 1, padding: 16, backgroundColor: "#07121f" },
+  h1: { color: "white", fontSize: 32, fontWeight: "800", marginBottom: 12 },
+
+  card: {
     backgroundColor: "rgba(255,255,255,0.06)",
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.12)",
-    marginBottom: 12,
+    marginBottom: 14,
   },
   input: {
     backgroundColor: "rgba(255,255,255,0.08)",
@@ -146,6 +140,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.12)",
     marginBottom: 10,
   },
+
   addButton: {
     backgroundColor: "#1d4ed8",
     paddingVertical: 12,
@@ -153,6 +148,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   addButtonText: { color: "white", fontWeight: "800" },
+
   loadingBox: { padding: 16, alignItems: "center" },
   note: { color: "#cbd5e1", marginTop: 8 },
 
@@ -167,7 +163,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.12)",
     marginBottom: 10,
   },
-  title: { color: "white", fontWeight: "800", fontSize: 18 },
+  title: { color: "white", fontWeight: "800", fontSize: 16 },
   author: { color: "#cbd5e1", marginTop: 2 },
-  chevron: { color: "#94a3b8", fontSize: 26, fontWeight: "800" },
+  chevron: { color: "#94a3b8", fontSize: 26, fontWeight: "700" },
 });
