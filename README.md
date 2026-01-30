@@ -1,5 +1,6 @@
 # BookNest – podręczna biblioteka (CRUD)
 
+Projekt zaliczeniowy - BookNest
 Aplikacja typu CRUD w React Native (Expo) + własne REST API (Node/Express) + baza w pliku (lowdb).
 
 ## Funkcje (CRUD + pola książki)
