@@ -1,214 +1,169 @@
-import { useMemo, useState } from "react";
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-
-// typ danych książki
-type Book = {
-  id: string;
-  title: string;
-  author: string;
-};
-
-// dane startowe
-const INITIAL_BOOKS: Book[] = [
-  { id: "1", title: "Wiedźmin", author: "Andrzej Sapkowski" },
-  { id: "2", title: "Hobbit", author: "J.R.R. Tolkien" },
-  { id: "3", title: "Solaris", author: "Stanisław Lem" },
-];
+import React, { useCallback, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import { createBook, getBooks, Book } from "./api/apiClient";
 
 export default function BookListScreen({ navigation }: any) {
-  // lista książek (stan aplikacji)
-  const [books, setBooks] = useState<Book[]>(INITIAL_BOOKS);
+  const [books, setBooks] = useState<Book[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  // pola formularza dodawania
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
 
-  // prosta walidacja formularza
   const canAdd = useMemo(() => title.trim().length > 0 && author.trim().length > 0, [title, author]);
 
-  // dodanie nowej książki do listy
-  const addBook = () => {
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await getBooks();
+      // sort alfabetycznie
+      const sorted = [...data].sort((a, b) => (a.title || "").localeCompare(b.title || "", "pl"));
+      setBooks(sorted);
+    } catch (e: any) {
+      Alert.alert("Błąd", e?.message ?? "Nie udało się pobrać książek.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // odświeżaj listę po powrocie ze szczegółów
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh])
+  );
+
+  async function onAdd() {
     if (!canAdd) return;
 
-    const newBook: Book = {
-      id: String(Date.now()),
-      title: title.trim(),
-      author: author.trim(),
-    };
-
-    setBooks((prev) => [newBook, ...prev]);
-    setTitle("");
-    setAuthor("");
-  };
-
-  // usunięcie książki z listy
-  const deleteBook = (id: string) => {
-    setBooks((prev) => prev.filter((b) => b.id !== id));
-  };
-
-  // aktualizacja książki po edycji na ekranie szczegółów
-  const updateBook = (updated: Book) => {
-    setBooks((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
-  };
+    setSaving(true);
+    try {
+      await createBook({ title: title.trim(), author: author.trim(), description: "", rating: undefined });
+      setTitle("");
+      setAuthor("");
+      await refresh();
+    } catch (e: any) {
+      Alert.alert("Błąd", e?.message ?? "Nie udało się dodać książki.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Lista książek</Text>
+      <Text style={styles.h1}>Podręczna biblioteka</Text>
 
-      {/* formularz dodawania */}
-      <View style={styles.form}>
+      <View style={styles.card}>
         <TextInput
-          style={styles.input}
           placeholder="Tytuł"
-          placeholderTextColor="#94a3b8"
+          placeholderTextColor="#9f0bc2"
           value={title}
           onChangeText={setTitle}
+          style={styles.input}
         />
         <TextInput
-          style={styles.input}
           placeholder="Autor"
-          placeholderTextColor="#94a3b8"
+          placeholderTextColor="#9f0bc2"
           value={author}
           onChangeText={setAuthor}
+          style={styles.input}
         />
 
         <Pressable
-          style={({ pressed }) => [
-            styles.addBtn,
-            !canAdd && styles.addBtnDisabled,
-            pressed && canAdd && styles.pressed,
-          ]}
-          onPress={addBook}
-          disabled={!canAdd}
+          onPress={onAdd}
+          disabled={!canAdd || saving}
+          style={[styles.addButton, (!canAdd || saving) && { opacity: 0.6 }]}
         >
-          <Text style={styles.addBtnText}>+ Dodaj</Text>
+          <Text style={styles.addButtonText}>{saving ? "Dodawanie..." : "+ Dodaj"}</Text>
         </Pressable>
       </View>
 
-      {/* lista książek */}
-      <FlatList
-        data={books}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{ gap: 12 }}
-        renderItem={({ item }) => (
-          // pojedynczy element listy
-          <Pressable
-            style={({ pressed }) => [styles.item, pressed && styles.pressed]}
-            onPress={() =>
-              navigation.navigate("BookDetails", {
-                book: item,
-                onDelete: deleteBook,
-                onUpdate: updateBook,
-              })
-            }
-          >
-            <View style={{ flex: 1 }}>
-              <Text style={styles.title}>{item.title}</Text>
-              <Text style={styles.author}>{item.author}</Text>
-            </View>
-
-            {/* przycisk usuwania (bez wchodzenia w szczegóły) */}
-            <Pressable onPress={() => deleteBook(item.id)} style={styles.deletePill}>
-              <Text style={styles.deletePillText}>Usuń</Text>
+      {loading ? (
+        <View style={styles.loadingBox}>
+          <ActivityIndicator />
+          <Text style={styles.note}>Pobieranie danych...</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={books}
+          keyExtractor={(item) => String(item.id)}
+          renderItem={({ item }) => (
+            <Pressable
+              onPress={() => navigation.navigate("BookDetails", { id: item.id })}
+              style={styles.item}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={styles.title}>
+                  {item.favorite ? "★ " : ""}
+                  {item.title}
+                </Text>
+                <Text style={styles.author}>{item.author}</Text>
+              </View>
+              <Text style={styles.chevron}>›</Text>
             </Pressable>
-          </Pressable>
-        )}
-      />
+          )}
+          ListEmptyComponent={<Text style={styles.note}>Brak książek. Dodaj pierwszą.</Text>}
+        />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  // główny kontener ekranu
-  container: {
-    flex: 1,
-    backgroundColor: "#0b1220",
-    padding: 16,
-  },
+  container: { flex: 1, padding: 16, backgroundColor: "#07121f" },
+  h1: { color: "white", fontSize: 32, fontWeight: "800", marginBottom: 12 },
 
-  // nagłówek ekranu
-  header: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "white",
-    marginBottom: 16,
-  },
-
-  // formularz
-  form: {
-    backgroundColor: "#0f1b33",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
-    gap: 10,
-  },
-
-  // input
-  input: {
-    backgroundColor: "#1f2937",
-    color: "white",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 10,
+  card: {
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderRadius: 16,
+    padding: 14,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "rgba(255,255,255,0.12)",
+    marginBottom: 14,
+  },
+  input: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 10,
+    padding: 12,
+    color: "white",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    marginBottom: 10,
   },
 
-  // przycisk dodawania
-  addBtn: {
-    backgroundColor: "#2563eb",
-    paddingVertical: 10,
+  addButton: {
+    backgroundColor: "#1d4ed8",
+    paddingVertical: 12,
     borderRadius: 10,
     alignItems: "center",
   },
+  addButtonText: { color: "white", fontWeight: "800" },
 
-  addBtnDisabled: {
-    opacity: 0.5,
-  },
+  loadingBox: { padding: 16, alignItems: "center" },
+  note: { color: "#cbd5e1", marginTop: 8 },
 
-  addBtnText: {
-    color: "white",
-    fontWeight: "800",
-  },
-
-  // pojedynczy element listy
   item: {
-    backgroundColor: "#1f2937",
-    padding: 12,
-    borderRadius: 10,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    marginBottom: 10,
   },
-
-  pressed: {
-    opacity: 0.85,
-  },
-
-  // tytuł książki
-  title: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "white",
-  },
-
-  // autor książki
-  author: {
-    fontSize: 14,
-    color: "#cbd5e1",
-  },
-
-  // mini przycisk usuń
-  deletePill: {
-    backgroundColor: "#ef4444",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-  },
-
-  deletePillText: {
-    color: "white",
-    fontWeight: "800",
-    fontSize: 12,
-  },
+  title: { color: "white", fontWeight: "800", fontSize: 16 },
+  author: { color: "#cbd5e1", marginTop: 2 },
+  chevron: { color: "#94a3b8", fontSize: 26, fontWeight: "700" },
 });

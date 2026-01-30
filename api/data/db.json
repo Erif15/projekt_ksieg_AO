@@ -1,0 +1,45 @@
+{
+  "books": [
+    {
+      "id": 1,
+      "title": "Wiedźmin",
+      "author": "Andrzej Sapkowski",
+      "description": "Saga o wiedźminie Geralcie.",
+      "rating": 5
+    },
+    {
+      "id": 2,
+      "title": "Hobbit",
+      "author": "J.R.R. Tolkien",
+      "description": "Wyprawa Bilba po skarb.",
+      "rating": 5
+    },
+    {
+      "id": 3,
+      "title": "Solaris",
+      "author": "Stanisław Lem",
+      "description": "Kontakt z obcą inteligencją.",
+      "rating": 4
+    },
+    {
+      "id": "KC92Ohz-DePx2u_bgN3EL",
+      "title": "Dracula",
+      "author": "Bram Stoker",
+      "description": "",
+      "favorite": false,
+      "createdAt": "2026-01-29T19:03:34.908Z",
+      "updatedAt": "2026-01-29T19:03:34.908Z"
+    },
+    {
+      "id": "y_ln5HQmK7hVrAtpP2yV9",
+      "title": "Adwokat diabła",
+      "author": "Andrew Neiderman",
+      "description": "Kiedy Kevin Taylor dołącza do wziętej, ekskluzywnej firmy prawniczej na Manhattanie, specjalizującej się w prawie karnym spółki John Milton i Wspólnicy, oznacza to dla niego długo wyczekiwaną poprawę losu. Wreszcie może się wraz z żoną cieszyć wszystkimi luksusami, jakich oboje pragnęli – pieniędzmi, limuzyną z szoferem, a nawet olśniewającą siedzibą w strzelistym apartamentowcu w samym sercu Nowego Jorku. Kevin nie zdaje sobie jednak sprawy z tego, że związał się właśnie z podejrzanym, mrocznym stowarzyszeniem…\nJego nowy szef, John Milton, z miejsca przydziela mu zapowiadającą się na jedną z najgłośniejszych spraw roku, wręczając mu w tym celu dokumentację sporządzoną jeszcze przed popełnieniem zbrodni. Kevin rzuca się w wir pracy, lecz rychło dostrzega niepokojące, wręcz złowrogie szczegóły, jakie stopniowo wyłaniają się spod atrakcyjnej fasady jego nowej firmy. Gdy zauważa, że jego współpracownicy zwyciężają w każdej potyczce na sali sądowej, a wszyscy ich klienci zostają oczyszczeni z zarzutów, jego narastające podejrzenia przeobrażają się w autentyczny strach. Kevin, nie wiedząc o tym jeszcze, został ADWOKATEM DIABŁA i nie ma dla niego ratunku przed światem potępionych…\nKsiążka zainspirowała słynną hollywoodzką adaptację filmową z 1997 r. w reżyserii Taylora Hackforda. Główne role zagrali Keanu Reeves, Charlize Theron i Al Pacino, którego barwna, ekstrawagancka kreacja zyskała szczególne uznanie krytyków.",
+      "favorite": true,
+      "createdAt": "2026-01-29T19:04:43.030Z",
+      "updatedAt": "2026-01-29T19:10:59.470Z",
+      "rating": 5,
+      "coverUri": "blob:http://localhost:8081/e0fa16ca-df24-4f60-8374-ef933acec717"
+    }
+  ]
+}
